@@ -96,14 +96,14 @@
         $("#addTask").click(function () {
             $.ajax({
                 url: "/addTask",
-                data: {url: $("#url").value, filename: $("#filename").value},
+                data: {url: $("#url").val(), filename: $("#filename").val()},
                 type: "POST",
                 success: function (req) {
                     console.log(req);
-                    $("#alert").removeClass("alert-danger").addClass("alert-success").text("成功");
+                    $("#alert").removeClass("alert-danger").addClass("alert-success").text("成功").show();
                 },
                 error: function () {
-                    $("#alert").removeClass("alert-success").addClass("alert-danger").text("请求异常");
+                    $("#alert").removeClass("alert-success").addClass("alert-danger").text("请求异常").show();
                 }
             });
         });

@@ -26,7 +26,7 @@ public class DownloaderController {
     @ResponseBody
     @RequestMapping("taskList")
     public Result<TaskListResponse> taskList(Model model) {
-        return null;
+        return Result.success(null);
     }
 
     @ResponseBody
