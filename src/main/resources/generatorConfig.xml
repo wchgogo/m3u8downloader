@@ -33,6 +33,7 @@
         </javaClientGenerator>
 
         <table tableName="task"/>
+        <table tableName="task_detail"/>
 
     </context>
 </generatorConfiguration>

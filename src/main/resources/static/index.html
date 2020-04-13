@@ -9,6 +9,7 @@
 <body>
 
 <div class="container">
+    <!--添加任务-->
     <div class="row">
         <div class="col-md-8 col-md-offset-2" style="margin-top:15px;margin-bottom: 15px">
             <form class="form-inline" action="addTask">
@@ -24,90 +25,175 @@
             </form>
         </div>
     </div>
+
+    <!--提示栏-->
     <div class="row">
         <div class="col-md-8 col-md-offset-2">
             <div class="alert" id="alert" role="alert" hidden></div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <span style="float:left">生活大爆炸-第三季</span>
-            <div style="float:right">
-                <a>暂停</a>
-                <a>移除</a>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <div class="progress">
-                <div class="progress-bar progress-bar-success" role="progressbar"
-                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
-                    145/879
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <span style="float:left">生活大爆炸-第三季</span>
-            <div style="float:right">
-                <a>暂停</a>
-                <a>移除</a>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <div class="progress">
-                <div class="progress-bar progress-bar-success" role="progressbar"
-                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
-                    145/879
-                </div>
-            </div>
-        </div>
-    </div>
+    <!--任务列表-->
+    <div id="taskList">
 
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <span style="float:left">生活大爆炸-第三季</span>
-            <div style="float:right">
-                <a>暂停</a>
-                <a>移除</a>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <div class="progress">
-                <div class="progress-bar progress-bar-success" role="progressbar"
-                     aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
-                    145/879
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 <script src="js/jquery3.4.1/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap3.3.7/bootstrap.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $("#addTask").click(function () {
+    /*添加任务*/
+    function addTask() {
+        return function () {
             $.ajax({
                 url: "/addTask",
                 data: {url: $("#url").val(), filename: $("#filename").val()},
                 type: "POST",
-                success: function (req) {
-                    console.log(req);
-                    $("#alert").removeClass("alert-danger").addClass("alert-success").text("成功").show();
+                success: function (resp) {
+                    if (resp.code === 0) {
+                        alert(true, "添加成功");
+                        renderTaskList(resp.data.taskList);
+                    } else {
+                        alert(true, "添加失败" + resp.msg);
+                    }
                 },
                 error: function () {
-                    $("#alert").removeClass("alert-success").addClass("alert-danger").text("请求异常").show();
+                    alert(true, "请求异常");
                 }
             });
+        };
+    }
+
+    /*请求列表数据*/
+    function queryList() {
+        $.ajax({
+            url: "/taskList",
+            data: {},
+            type: "POST",
+            success: function (resp) {
+                if (resp.code === 0) {
+                    renderTaskList(resp.data.taskList);
+                } else {
+                    alert(true, "数据异常" + resp.msg);
+                }
+            },
+            error: function () {
+                alert(true, "请求异常");
+            }
         });
+    }
+
+    /*渲染任务列表*/
+    function renderTaskList(taskList) {
+        let warpper = $("#taskList");
+        warpper.empty();
+        for (let task of taskList) {
+            warpper.append(
+                '<div>' +
+                '        <div class="row">' +
+                '            <div class="col-md-8 col-md-offset-2">' +
+                '                <span style="display:block">' + task.filename + ' [' + task.url + ']' + '</span>' +
+                '            </div>' +
+                '        </div>' +
+                '        <div class="row">' +
+                '            <div class="col-md-8 col-md-offset-2">' +
+                '                <div class="progress">' +
+                '                    <div class="progress-bar ' + buildProgressClass(task) + '" ' +
+                '                         role="progressbar" ' +
+                '                         style="width: ' + Math.max(buildProgress(task), 25) + '%">' +
+                '                         <span style="float:left; margin-left:20px">' + buildProgressText(task) + '</span>' +
+                '                    </div>' +
+                '                </div>' +
+                '            </div>' +
+                '        </div>' +
+                '    </div>'
+            )
+        }
+    }
+
+    function buildProgress(task) {
+        if (task.state === 1 || task.state === 6) {
+            return 100;
+        }
+        return Math.round(task.finishSegments / task.totalSegments * 100);
+    }
+
+    var classMap = {
+        1: "progress-bar-warning progress-bar-striped active",
+        2: "progress-bar-success progress-bar-striped active",
+        3: "progress-bar-success progress-bar-striped active",
+        4: "progress-bar-success progress-bar-striped active",
+        5: "progress-bar-success",
+        6: "progress-bar-danger"
+    };
+
+    function buildProgressClass(task) {
+        return classMap[task.state];
+    }
+
+    var stateMap = {
+        1: "正在解析",
+        2: "正在下载",
+        3: "正在合并",
+        4: "正在转码",
+        5: "下载完成",
+        6: ""
+    };
+
+    function buildProgressText(task) {
+        let text = stateMap[task.state];
+        if (task.state === 2) {
+            text = text + ' ' + buildProgress(task) + '%';
+        } else if (task.state === 6) {
+            text = text + task.failReason;
+        }
+        text = text + ' ' + buildElapseTime(task.elapseTime);
+        return text;
+    }
+
+    function buildElapseTime(miliseconds) {
+        let text = '';
+        let seconds = miliseconds / 1000;
+        if (seconds > 86400) {
+            text = text + parseInt(seconds / 86400) + '天'
+        }
+        seconds = seconds % 86400;
+        if (seconds > 3600) {
+            text = text + parseInt(seconds / 3600) + '时'
+        }
+        seconds = seconds % 3600;
+        if (seconds > 60) {
+            text = text + parseInt(seconds / 60) + '分'
+        }
+        seconds = seconds % 60;
+        if (seconds > 0) {
+            text = text + parseInt(seconds) + '秒'
+        }
+        return text;
+    }
+
+    /*操作提示*/
+    function alert(success, msg) {
+        $("#alert")
+            .removeClass(success ? "alert-danger" : "alert-success")
+            .addClass(success ? "alert-success" : "alert-danger")
+            .text(msg)
+            .show();
+        setTimeout(function () {
+            $("#alert").hide();
+        }, 3000)
+    }
+
+    function updateList() {
+        queryList();
+        setTimeout(updateList, 5000);
+    }
+
+    $(document).ready(function () {
+        /*添加按钮点击事件*/
+        $("#addTask").click(addTask());
+        updateList();
     });
+
 </script>
 </body>
 </html>
