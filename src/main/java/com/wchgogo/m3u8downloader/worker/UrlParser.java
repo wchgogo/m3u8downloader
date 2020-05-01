@@ -90,6 +90,9 @@ public class UrlParser implements IWorker {
                     taskService.parseUrlSuccess(task);
                     log.info("[parseUrl] taskId={} retry={} success", task.getTaskId(), i);
                     return true;
+                } else {
+                    taskService.parseSeqFail(task);
+                    log.info("[parseUrl] taskId={} fail", task.getTaskId());
                 }
             } catch (Exception e) {
                 log.error("[parseUrl] taskId={} retry={} fail", task.getTaskId(), i, e);

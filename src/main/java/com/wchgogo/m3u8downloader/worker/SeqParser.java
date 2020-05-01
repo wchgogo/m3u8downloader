@@ -34,7 +34,7 @@ public class SeqParser implements IWorker {
                 for (String item : data.replaceAll("#.*\n", "").split("\n")) {
                     item = item.trim();
                     String segmentUrl;
-                    if (item.startsWith("/") || item.startsWith("http:")) {
+                    if (item.startsWith("/")) {
                         segmentUrl = new URL(url).getProtocol() + "://" + new URL(url).getHost() + item;
                     } else {
                         segmentUrl = url.substring(0, url.lastIndexOf("/") + 1) + item;

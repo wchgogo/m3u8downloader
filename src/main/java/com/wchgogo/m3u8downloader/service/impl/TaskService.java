@@ -40,6 +40,19 @@ public class TaskService implements ITaskService {
         return task;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public List<Task> addTaskList(List<Task> taskList) {
+        for (Task task : taskList) {
+            task.setTaskId(IdUtil.nextId());
+            task.setRetryTime(10);
+            task.setThreadNum(10);
+            task.setState(Const.STATE_NEW);
+            taskMapper.insert(task);
+        }
+        return taskList;
+    }
+
     @Override
     public Task getTask(Long taskId) {
         return taskMapper.selectByPrimaryKey(taskId);
@@ -48,7 +61,7 @@ public class TaskService implements ITaskService {
     @Override
     public List<Task> getTaskList(int pageName, int pageSize) {
         TaskExample example = new TaskExample();
-        example.setOrderByClause("create_time desc");
+        example.setOrderByClause("create_time desc, task_id desc");
         return taskMapper.selectByExample(example);
     }
 

@@ -12,16 +12,17 @@
     <!--添加任务-->
     <div class="row">
         <div class="col-md-8 col-md-offset-2" style="margin-top:15px;margin-bottom: 15px">
-            <form class="form-inline" action="addTask">
+            <form class="form-inline">
                 <div class="form-group">
-                    <label class="sr-only" for="url">m3u8地址</label>
-                    <input type="text" class="form-control" id="url" name="url" placeholder="m3u8地址">
+                    <label class="sr-only" for="url">地址</label>
+                    <input type="text" class="form-control" id="url" name="url" placeholder="m3u8地址 在线播放地址">
                 </div>
                 <div class="form-group">
                     <label class="sr-only" for="filename">文件名</label>
                     <input type="text" class="form-control" id="filename" name="filename" placeholder="文件名">
                 </div>
-                <button type="button" class="btn btn-default" id="addTask">添加</button>
+                <button type="button" class="btn btn-default" id="downloadEpisode">下载单集</button>
+                <button type="button" class="btn btn-default" id="downloadSeason">下载整季</button>
             </form>
         </div>
     </div>
@@ -37,30 +38,126 @@
     <div id="taskList">
 
     </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="downloadSeasonModel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">请选择要下载的剧集</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="selectEpisodes">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="downloadEpisodes">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="js/jquery3.4.1/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap3.3.7/bootstrap.min.js"></script>
 <script>
     /*添加任务*/
-    function addTask() {
+    function downloadEpisode() {
         return function () {
+            let data = {episodeList: [{name: $("#filename").val(), url: $("#url").val()}]};
             $.ajax({
-                url: "/addTask",
-                data: {url: $("#url").val(), filename: $("#filename").val()},
+                url: "/downloadEpisodes",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify(data),
                 type: "POST",
                 success: function (resp) {
+                    $('#downloadSeasonModel').modal('hide');
                     if (resp.code === 0) {
                         alert(true, "添加成功");
+                        $("#filename").val('');
+                        $("#url").val('');
                         renderTaskList(resp.data.taskList);
                     } else {
-                        alert(true, "添加失败" + resp.msg);
+                        alert(false, "添加失败" + resp.msg);
                     }
                 },
                 error: function () {
-                    alert(true, "请求异常");
+                    $('#downloadSeasonModel').modal('hide');
+                    alert(false, "请求异常");
                 }
             });
         };
+    }
+
+    /*下载多集*/
+    function downloadEpisodes() {
+        return function () {
+            let data = {episodeList: []};
+            let checkItems = $("#selectEpisodes").serializeArray();
+            $.each(checkItems, function () {
+                data.episodeList.push({name: $("#filename").val() + this.name, url: this.value})
+            });
+            $.ajax({
+                url: "/downloadEpisodes",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify(data),
+                type: "POST",
+                success: function (resp) {
+                    $('#downloadSeasonModel').modal('hide');
+                    if (resp.code === 0) {
+                        alert(true, "添加成功");
+                        $("#filename").val('');
+                        $("#url").val('');
+                        renderTaskList(resp.data.taskList);
+                    } else {
+                        alert(false, "添加失败" + resp.msg);
+                    }
+                },
+                error: function () {
+                    $('#downloadSeasonModel').modal('hide');
+                    alert(false, "请求异常");
+                }
+            });
+        };
+    }
+
+    /*下载整季*/
+    function downloadSeason() {
+        return function () {
+            let data = {url: $("#url").val(), filename: $("#filename").val()};
+            $.ajax({
+                url: "/downloadSeason",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify(data),
+                type: "POST",
+                success: function (resp) {
+                    if (resp.code === 0) {
+                        selectDownloadEpisode(resp.data);
+                    } else {
+                        alert(false, "请求失败" + resp.msg);
+                    }
+                },
+                error: function () {
+                    alert(false, "请求异常");
+                }
+            });
+        };
+    }
+
+    /*弹窗选择要下载的剧集*/
+    function selectDownloadEpisode(episodeList) {
+        let warpper = $("#selectEpisodes");
+        warpper.empty();
+        for (let episode of episodeList) {
+            warpper.append(
+                '<div>' +
+                '<input type="checkbox" name="' + episode.name + '" value="' + episode.url + '">' +
+                episode.name + ' ' + episode.url +
+                '</div>');
+        }
+        $('#downloadSeasonModel').modal('show');
     }
 
     /*请求列表数据*/
@@ -111,7 +208,7 @@
     }
 
     function buildProgress(task) {
-        if (task.state === 0 || task.state === 1 || task.state === 2 || task.state === 6 || task.state === 7 ) {
+        if (task.state === 0 || task.state === 1 || task.state === 2 || task.state === 6 || task.state === 7) {
             return 100;
         }
         return Math.round(task.finishSegments / task.totalSegments * 100);
@@ -194,7 +291,9 @@
 
     $(document).ready(function () {
         /*添加按钮点击事件*/
-        $("#addTask").click(addTask());
+        $("#downloadEpisode").click(downloadEpisode());
+        $("#downloadSeason").click(downloadSeason());
+        $("#downloadEpisodes").click(downloadEpisodes());
         updateList();
     });
 

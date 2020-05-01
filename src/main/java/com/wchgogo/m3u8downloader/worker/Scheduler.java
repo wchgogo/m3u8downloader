@@ -33,6 +33,12 @@ public class Scheduler {
         log.info("[schedule] taskId={} success", task.getTaskId());
     }
 
+    public void schedule(List<Task> taskList) {
+        for(Task task : taskList){
+            schedule(task);
+        }
+    }
+
     public void work(Task task) {
         log.info("[work] taskId={} start", task.getTaskId());
         taskService.start(task);

@@ -13,6 +13,8 @@ import java.util.List;
 public interface ITaskService {
     Task addTask(Task task);
 
+    List<Task> addTaskList(List<Task> taskList);
+
     Task getTask(Long taskId);
 
     List<Task> getTaskList(int pageName, int pageSize);
