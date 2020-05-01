@@ -11,11 +11,21 @@ import java.util.List;
  * Description:
  */
 public interface ITaskService {
+    Task addTask(Task task);
+
+    Task getTask(Long taskId);
+
+    List<Task> getTaskList(int pageName, int pageSize);
+
     void start(Task task);
 
-    void parseFail(Task task);
+    public void parseUrlFail(Task task);
 
-    void parseSuccess(Task task, List<String> segments);
+    public void parseUrlSuccess(Task task);
+
+    void parseSeqFail(Task task);
+
+    void parseSeqSuccess(Task task, List<String> segments);
 
     void downloadFail(Task task);
 

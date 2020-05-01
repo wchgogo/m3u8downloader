@@ -73,11 +73,11 @@
                 if (resp.code === 0) {
                     renderTaskList(resp.data.taskList);
                 } else {
-                    alert(true, "数据异常" + resp.msg);
+                    alert(false, "数据异常" + resp.msg);
                 }
             },
             error: function () {
-                alert(true, "请求异常");
+                alert(false, "请求异常");
             }
         });
     }
@@ -111,19 +111,21 @@
     }
 
     function buildProgress(task) {
-        if (task.state === 1 || task.state === 6) {
+        if (task.state === 0 || task.state === 1 || task.state === 2 || task.state === 6 || task.state === 7 ) {
             return 100;
         }
         return Math.round(task.finishSegments / task.totalSegments * 100);
     }
 
     var classMap = {
+        0: "progress-bar-warning",
         1: "progress-bar-warning progress-bar-striped active",
-        2: "progress-bar-success progress-bar-striped active",
+        2: "progress-bar-warning progress-bar-striped active",
         3: "progress-bar-success progress-bar-striped active",
         4: "progress-bar-success progress-bar-striped active",
-        5: "progress-bar-success",
-        6: "progress-bar-danger"
+        5: "progress-bar-success progress-bar-striped active",
+        6: "progress-bar-success",
+        7: "progress-bar-danger"
     };
 
     function buildProgressClass(task) {
@@ -131,19 +133,21 @@
     }
 
     var stateMap = {
-        1: "正在解析",
-        2: "正在下载",
-        3: "正在合并",
-        4: "正在转码",
-        5: "下载完成",
-        6: ""
+        0: "等待下载",
+        1: "正在解析下载地址",
+        2: "正在解析视频列表",
+        3: "正在下载",
+        4: "正在合并",
+        5: "正在转码",
+        6: "下载完成",
+        7: ""
     };
 
     function buildProgressText(task) {
         let text = stateMap[task.state];
-        if (task.state === 2) {
+        if (task.state === 3) {
             text = text + ' ' + buildProgress(task) + '%';
-        } else if (task.state === 6) {
+        } else if (task.state === 7) {
             text = text + task.failReason;
         }
         text = text + ' ' + buildElapseTime(task.elapseTime);

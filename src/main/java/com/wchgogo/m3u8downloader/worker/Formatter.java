@@ -27,15 +27,15 @@ public class Formatter implements IWorker {
 
     @Override
     public boolean work(Task task) {
-        for (int i = 0; i < Const.FORMAT_RETRY_TIMES; i++) {
+        for (int i = 0; i < task.getRetryTime(); i++) {
             try {
                 List<TaskDetail> details = taskService.getDetails(task.getTaskId());
                 String segmentUrl = details.get(0).getSegmentUrl();
                 String extension = segmentUrl.substring(segmentUrl.lastIndexOf("."));
                 String mergeFile = Const.MERGE_DIR + "/" + task.getFilename() + extension;
                 String destFile = Const.DOWNLOAD_DIR + "/" + task.getFilename() + "." + task.getFormat();
-                String cmd = String.format("%s -i %s -vcodec copy -acodec copy %s",
-                        Const.FORMAT_CMD_PATH, mergeFile, destFile);
+                String cmd = String.format("%s -y -i %s -vcodec copy -acodec copy %s",
+                        Const.FFMPEG_PATH, mergeFile, destFile);
                 Process process = null;
                 try {
                     process = new ProcessBuilder().command(cmd.split(" ")).start();

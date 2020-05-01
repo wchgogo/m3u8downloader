@@ -28,7 +28,7 @@ public class Merger implements IWorker {
 
     @Override
     public boolean work(Task task) {
-        for (int i = 0; i < Const.MERGE_RETRY_TIMES; i++) {
+        for (int i = 0; i < task.getRetryTime(); i++) {
             try {
                 List<TaskDetail> details = taskService.getDetails(task.getTaskId());
                 String segmentUrl = details.get(0).getSegmentUrl();

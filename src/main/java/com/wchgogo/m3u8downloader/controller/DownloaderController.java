@@ -1,8 +1,7 @@
 package com.wchgogo.m3u8downloader.controller;
 
-import com.wchgogo.m3u8downloader.mapper.TaskMapper;
 import com.wchgogo.m3u8downloader.po.Task;
-import com.wchgogo.m3u8downloader.po.TaskExample;
+import com.wchgogo.m3u8downloader.service.ITaskService;
 import com.wchgogo.m3u8downloader.util.IdUtil;
 import com.wchgogo.m3u8downloader.vo.Result;
 import com.wchgogo.m3u8downloader.vo.TaskListResponse;
@@ -20,7 +19,7 @@ import java.util.List;
 @Controller
 public class DownloaderController {
     @Resource
-    private TaskMapper taskMapper;
+    private ITaskService taskService;
 
     @Resource
     private Scheduler scheduler;
@@ -33,9 +32,7 @@ public class DownloaderController {
     @ResponseBody
     @RequestMapping("taskList")
     public Result<TaskListResponse> taskList(Model model) {
-        TaskExample example = new TaskExample();
-        example.setOrderByClause("create_time desc");
-        List<Task> taskList = taskMapper.selectByExample(example);
+        List<Task> taskList = taskService.getTaskList(1, 100);
         TaskListResponse response = new TaskListResponse();
         response.setTaskList(taskList);
         return Result.success(response);
@@ -46,21 +43,14 @@ public class DownloaderController {
     public Result<TaskListResponse> addTask(Model model, String url, String filename) {
         try {
             Task task = new Task();
-            task.setTaskId(IdUtil.nextId());
             task.setUrl(url);
             task.setFilename(filename);
             task.setFormat("mp4");
-            task.setRetryTime(10);
-            task.setThreadNum(10);
-            task.setState(1);
             task.setCreateTime(System.currentTimeMillis());
-            int rowNum = taskMapper.insert(task);
-            if (rowNum <= 0) {
-                return Result.error(-1, "添加任务失败");
-            } else {
-                scheduler.schedule(task);
-                return taskList(model);
-            }
+
+            Task newTask = taskService.addTask(task);
+            scheduler.schedule(newTask);
+            return taskList(model);
         } catch (Exception e) {
             log.error("", e);
             return Result.error(-1, "添加任务失败");

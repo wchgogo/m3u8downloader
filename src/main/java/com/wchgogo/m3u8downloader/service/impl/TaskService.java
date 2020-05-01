@@ -5,6 +5,7 @@ import com.wchgogo.m3u8downloader.mapper.TaskMapper;
 import com.wchgogo.m3u8downloader.po.Task;
 import com.wchgogo.m3u8downloader.po.TaskDetail;
 import com.wchgogo.m3u8downloader.po.TaskDetailExample;
+import com.wchgogo.m3u8downloader.po.TaskExample;
 import com.wchgogo.m3u8downloader.service.ITaskService;
 import com.wchgogo.m3u8downloader.util.Const;
 import com.wchgogo.m3u8downloader.util.IdUtil;
@@ -30,14 +31,52 @@ public class TaskService implements ITaskService {
     private TaskDetailMapper taskDetailMapper;
 
     @Override
+    public Task addTask(Task task) {
+        task.setTaskId(IdUtil.nextId());
+        task.setRetryTime(10);
+        task.setThreadNum(10);
+        task.setState(Const.STATE_NEW);
+        taskMapper.insert(task);
+        return task;
+    }
+
+    @Override
+    public Task getTask(Long taskId) {
+        return taskMapper.selectByPrimaryKey(taskId);
+    }
+
+    @Override
+    public List<Task> getTaskList(int pageName, int pageSize) {
+        TaskExample example = new TaskExample();
+        example.setOrderByClause("create_time desc");
+        return taskMapper.selectByExample(example);
+    }
+
+    @Override
     public void start(Task task) {
         task.setStartTime(System.currentTimeMillis());
         task.setElapseTime(0L);
+        task.setState(Const.STATE_PARSING_URL);
         taskMapper.updateByPrimaryKey(task);
     }
 
     @Override
-    public void parseFail(Task task) {
+    public void parseUrlFail(Task task) {
+        task.setState(Const.STATE_FAIL);
+        task.setFailReason("解析url失败");
+        task.setElapseTime(System.currentTimeMillis() - task.getCreateTime());
+        taskMapper.updateByPrimaryKey(task);
+    }
+
+    @Override
+    public void parseUrlSuccess(Task task) {
+        task.setState(Const.STATE_PARSING_SEQUENCE);
+        task.setElapseTime(System.currentTimeMillis() - task.getCreateTime());
+        taskMapper.updateByPrimaryKey(task);
+    }
+
+    @Override
+    public void parseSeqFail(Task task) {
         task.setState(Const.STATE_FAIL);
         task.setFailReason("解析失败");
         task.setElapseTime(System.currentTimeMillis() - task.getCreateTime());
@@ -46,7 +85,7 @@ public class TaskService implements ITaskService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void parseSuccess(Task task, List<String> segments) {
+    public void parseSeqSuccess(Task task, List<String> segments) {
         task.setState(Const.STATE_DOWNLOADING);
         task.setTotalSegments(segments.size());
         task.setElapseTime(System.currentTimeMillis() - task.getCreateTime());

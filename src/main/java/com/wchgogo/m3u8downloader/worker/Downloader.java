@@ -42,7 +42,7 @@ public class Downloader implements IWorker {
                         }
                         String url = detail.getSegmentUrl();
                         try {
-                            if (detail.getRetryTimes() > Const.DOWNLOAD_RETRY_TIMES) {
+                            if (detail.getRetryTimes() > task.getRetryTime()) {
                                 taskService.detailDownloadFail(task, detail);
                                 log.info("[download] taskId={} detailId={} retry={} url={} fail",
                                         task.getTaskId(), detail.getDetailId(), detail.getRetryTimes(), url);
